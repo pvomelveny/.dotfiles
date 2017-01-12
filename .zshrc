@@ -5,7 +5,7 @@ export ALTERNATE_EDITOR='vi'
 # Source Computer Local Variables
 # Path to Antigen and Anaconda need to be here
 if [ -f ".system_exports.zsh" ]; then
-    source .custom_exports.zsh
+    source .system_exports.zsh
 fi
 
 # Set vi mode
