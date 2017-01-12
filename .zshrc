@@ -4,7 +4,7 @@ export EDITOR='vim'
 export ALTERNATE_EDITOR='vi'
 # Source Computer Local Variables
 # Path to Antigen and Anaconda need to be here
-if [ -f ".custom_exports.zsh" ]; then
+if [ -f ".system_exports.zsh" ]; then
     source .custom_exports.zsh
 fi
 
