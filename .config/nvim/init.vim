@@ -3,14 +3,27 @@
 " -------
 call plug#begin()
 
+" --- Colorscheme/Aesthetics
+Plug 'flazz/vim-colorschemes'
+Plug 'mhinz/vim-startify'
+" --- General Vim Plugins
 Plug 'tpope/vim-repeat'
 Plug 'tpope/vim-dispatch'
 Plug 'junegunn/goyo.vim'
 Plug 'bronson/vim-trailing-whitespace'
 Plug 'tpope/vim-surround'
+Plug 'Raimondi/delimitMate'
+Plug 'Yggdroot/indentLine'
+Plug 'ervandew/supertab'
+" --- Snippits
+Plug 'SirVer/ultisnips'
+Plug 'honza/vim-snippets'
 " --- Tmux
 Plug 'christoomey/vim-tmux-navigator'
-" --- Searching
+" --- File Trees and Searching
+Plug 'scrooloose/nerdtree'
+Plug 'Xuyuanp/nerdtree-git-plugin'
+Plug 'tiagofumo/vim-nerdtree-syntax-highlight'
 Plug 'Shougo/vimproc.vim', {'do': 'make'} | Plug 'Shougo/unite.vim'
 Plug 'rking/ag.vim'
 " --- Git
@@ -27,6 +40,9 @@ Plug 'tpope/vim-salve'
 Plug 'guns/vim-sexp' | Plug 'tpope/vim-sexp-mappings-for-regular-people'
 Plug 'venantius/vim-cljfmt'
 Plug 'kien/rainbow_parentheses.vim'
+" --- Java/Scala
+Plug 'ensime/ensime-vim'
+Plug 'derekwyatt/vim-scala'
 " --- Markdown/Text Editing
 Plug 'gabrielelana/vim-markdown'
 Plug 'reedes/vim-pencil', {'for': ['mkd', 'markdown', 'text', 'txt']}
@@ -35,9 +51,11 @@ Plug 'lervag/vimtex'
 " --- General Language Plugins
 Plug 'Valloric/YouCompleteMe', {'do': './install.py --all'}
 Plug 'sheerun/vim-polyglot'
-Plug 'scrooloose/syntastic'
+Plug 'vim-syntastic/syntastic'
 Plug 'vim-airline/vim-airline'
 Plug 'vim-airline/vim-airline-themes'
+" --- Cute little text symbols
+Plug 'ryanoasis/vim-devicons'
 
 call plug#end()
 "
@@ -46,8 +64,9 @@ call plug#end()
 
 " Color Scheme
 set t_Co=256
-colorscheme pink_theme
+colorscheme cobalt2
 syntax on
+
 " Fonts
 let g:airline_powerline_fonts=1
 let g:airline_theme='molokai'
@@ -69,7 +88,7 @@ nnoremap <c-l> <c-w>l
 " Add colored column at 80 chars
 if (exists('+colorcolumn'))
     set colorcolumn=80
-    highlight ColorColumn ctermbg=9
+    highlight ColorColumn ctermbg=4
 endif
 
 " Sensible Tabbing
@@ -83,8 +102,32 @@ set fileformat=unix
 set textwidth=0
 set wrapmargin=0
 
+" Tab Characters
+let g:indentLine_char='¦'
+let g:indentLine_color_term=239
+
+" Auto Backet Completion
+let delimitMate_expand_cr = 1
+
+" Rainbow Brackets!!
+au VimEnter * RainbowParenthesesToggle
+au Syntax * RainbowParenthesesLoadRound
+au Syntax * RainbowParenthesesLoadSquare
+au Syntax * RainbowParenthesesLoadBraces
+
 " Polygot Ignore Languages
 let g:polyglot_disabled=['python', 'markdown', 'latex', 'mkd', 'tex', 'text']
+
+" make YCM compatible with UltiSnips (using supertab)
+" http://stackoverflow.com/questions/14896327/ultisnips-and-youcompleteme
+let g:ycm_key_list_select_completion = ['<C-n>', '<Down>']
+let g:ycm_key_list_previous_completion = ['<C-p>', '<Up>']
+let g:SuperTabDefaultCompletionType = '<C-n>'
+
+" better key bindings for UltiSnipsExpandTrigger
+let g:UltiSnipsExpandTrigger = "<tab>"
+let g:UltiSnipsJumpForwardTrigger = "<tab>"
+let g:UltiSnipsJumpBackwardTrigger = "<s-tab>"
 
 " Python Settings
 let g:python_host_prog='/usr/local/bin/python2'
@@ -100,12 +143,6 @@ au Filetype clojure nmap <C-C><C-K> :Require<cr>
 " Markdown/LaTex/Text Settings
 let g:tex_flavor='latex'
 
-" Web Development Settings
-" au BufNewFile,BufRead *.js, *.html, *.css, *.jsx
-"            \ set tabstop=2
-"            \ set softtabstop=2
-"            \ set shiftwidth=2
-
 " Syntatic Checkers
 let g:syntastic_python_checkers = ['flake8']
 
@@ -114,6 +151,35 @@ let g:ycm_autoclose_preview_window_after_completion=1
 " <Leader>g jumps to definition of decleration of variable
 map <Leader>g  :YcmCompleter GoToDefinitionElseDeclaration<CR>
 
+" NERDTree Config Options
+" Open by default when nothing passed to vim
+autocmd StdinReadPre * let s:std_in=1
+autocmd VimEnter * if argc() == 0 && !exists("s:std_in") | Startify
+                                                       \ | NERDTree
+                                                       \ | wincmd w
+                                                       \ | endif
+
+" Open Tree with <Leader>f
+nnoremap <Leader>f :NERDTreeToggle<Enter>
+" Open Tree on file itself
+nnoremap <silent> <Leader>v :NERDTreeFind<CR>
+" Quit the tree when you open a file - True {1} or False {0}
+let NERDTreeQuitOnOpen = 0
+" Close a tab if Tree is the only remaining window
+autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTreeType") && b:NERDTreeType == "primary") | q | endif
+" Delete Buffer if you delete file in Tree
+let NERDTreeAutoDeleteBuffer = 1
+" NERDTree Ignore Cases
+let NERDTreeIgnore=['.DS_Store', '.git']
+" NERDTree Cusomization
+let NERDTreeWinPos='right'
+let NERDTreeShowHidden=1
+let NERDTreeShowBookmarks=1
+let NERDTreeHighlightCursorline=1
+let NERDTreeCaseSensitiveSort=0
+" Clean up interface looks
+let NERDTreeMinimalUI = 1
+let NERDTreeDirArrows = 1
 
 " Unite File Searching
 let g:unite_source_history_yank_enable = 1
