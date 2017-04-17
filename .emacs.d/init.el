@@ -1,13 +1,17 @@
 ;;; init.el --- My emacs init.el file
 
+;;; Commentary:
+; It's my config file.  Go figure
+
+;;; Code:
+
 ;; the package manager - set it up and bootstrap use-package if necessary
 (require 'package)
-(setq
- package-archives '(("gnu" . "http://elpa.gnu.org/packages/")
-                    ("org" . "http://orgmode.org/elpa/")
-                    ("melpa" . "http://melpa.org/packages/")
-                    ("melpa-stable" . "http://stable.melpa.org/packages/"))
- package-archive-priorities '(("melpa-stable" . 1)))
+(add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages") t)
+(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
+(add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
+(add-to-list 'package-archives
+             '("melpa-stable" . "http://stable.melpa.org/packages/") t)
 
 (package-initialize)
 (when (not package-archive-contents)
@@ -39,7 +43,7 @@
  tab-width 4
  c-basic-offset 4)
 
-;; modes
+;; base emacs modes
 (electric-indent-mode 0)
 (electric-pair-mode 0)
 (show-paren-mode 1)
@@ -210,7 +214,28 @@
 ;;;
 
 (use-package org
-  :ensure t)
+  :ensure t
+  :pin org
+  :demand t
+  :bind
+  (("C-c l" . org-store-link)
+   ("C-c a" . org-agenda)
+   ("C-c c" . org-capture)
+   ("C-c b" . org-iswitchb))
+  :config
+  (setq
+   org-completion-use-ido t
+   org-default-notes-file "~/org/notes/notes.org"
+   ;; http://www.newartisans.com/2007/08/using-org-mode-as-a-day-planner/
+   org-log-done t     ; Add timestamp when marking done
+   org-agenda-ndays 7 ; Show 7 days by default
+   org-deadline-warning-days 14 ; Warn 14 days before a deadline is due
+   org-agenda-show-all-dates t  ; Show dates that don't have something due
+   org-agenda-skip-deadline-if-done t
+   org-agenda-skip-scheduled-if-done t
+   org-agenda-start-on-weekday nil
+   org-reverse-note-order t
+   ))
 
 ;;;
 ;;; Programming Languages
@@ -223,15 +248,20 @@
 ;; Clojure
 (use-package clojure-mode
   :ensure t
-  :pin melpa-stable)
+  :pin melpa-stable
+  :config
+  (add-hook 'clojure-mode #'smartparens-strict-mode)
+  (add-hook 'clojurescript-mode #'smartparens-strict-mode))
 
 (use-package cider
   :ensure t
-  :pin melpa-stable
+  :pin melpa
   :config
   (add-hook 'clojure-mode-hook 'cider-mode)
   (add-hook 'cider-repl-mode-hook #'company-mode)
   (add-hook 'cider-mode-hook #'company-mode)
+  (add-hook 'cider-repl-mode-hook #'smartparens-strict-mode)
+  (add-hook 'cider-repl-mode-hook #'rainbow-delimiters-mode)
   (add-hook 'cider-mode-hook
             '(lambda () (local-set-key (kbd "RET") 'newline-and-indent))))
 
@@ -241,10 +271,23 @@
   :pin melpa-stable)
 
 ;; Erlang
+(use-package erlang
+  :ensure t
+  :pin melpa-stable)
 
 ;; Go
 
 ;; Haskell
+(use-package haskell-mode
+  :ensure t
+  :pin melpa-stable)
+
+(use-package intero
+  :ensure t
+  :pin melpa-stable
+  :diminish intero-mode
+  :config
+  (add-hook 'haskell-mode-hook 'intero-mode))
 
 ;; Java
 (use-package eclim
@@ -259,6 +302,29 @@
   :config (company-emacs-eclim-setup))
 
 ;; Javascript
+
+;; JSON
+(use-package json-mode
+  :ensure t
+  :pin melpa-stable)
+
+(use-package json-reformat
+  :ensure t
+  :commands (json-reformat-region))
+
+(use-package json-snatcher
+  :ensure t
+  :commands (jsons-print-path))
+
+;; Markdown
+(use-package markdown-mode
+  :ensure t
+  :pin melpa-stable
+  :commands (markdown-mode gfm-mode)
+  :mode (("README\\.md\\'" . gfm-mode)
+         ("\\.md\\'" . gfm-mode)
+         ("\\.markdown\\'" . markdown-mode))
+  :init (setq markdown-command "multimarkdown"))
 
 ;; Python
 
@@ -292,12 +358,45 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(cider-boot-parameters "dev")
  '(custom-safe-themes
    (quote
     ("10e231624707d46f7b2059cc9280c332f7c7a530ebc17dba7e506df34c5332c4" default)))
+ '(org-agenda-files
+   (quote
+    ("~/org/agendas/projects.org" "~/org/agendas/personal.org" "~/org/agendas/work.org")))
+ '(org-capture-templates
+   (quote
+    (("t" "Add TODO task in personal " entry
+      (file+headline "~/org/agendas/personal.org" "Tasks")
+      "* TODO %^{Task}
+%?
+%U")
+     ("p" "Add TODO into projects" entry
+      (file+headline "~/org/agendas/projects.org" "Tasks")
+      "* TODO %^{Task}
+%?
+%U")
+     ("P" "Add TODO into projects with a file link" entry
+      (file+headline "~/org/agendas/projects.org" "Tasks")
+      "* TODO %^{Task}
+%?
+%f
+%U")
+     ("w" "Add TODO to work agenda" entry
+      (file+headline "~/org/agendas/work.org" "Unsorted Tasks")
+      "* TODO %^{Task}
+%?
+%U")
+     ("W" "Add TODO with file link" entry
+      (file+headline "~/org/agendas/work.org" "Unsorted Tasks")
+      "* TODO %^{Task}
+%?
+%f
+%U"))))
  '(package-selected-packages
    (quote
-    (company-emacs-eclim eclimd eclim ensime scala-mode flycheck rainbow-delimiters web-mode cider clojure-mode ag smartparens company yasnippet editorconfig undo-tree git-gutter use-package coffee-mode gruvbox-theme flx-ido projectile magit smex ido-ubiquitous better-defaults))))
+    (erlang intero haskell-mode json-mode org-plus-contrib ido-completing-read+ cider company-emacs-eclim eclimd eclim ensime scala-mode flycheck rainbow-delimiters web-mode clojure-mode ag smartparens company yasnippet editorconfig undo-tree git-gutter use-package coffee-mode gruvbox-theme flx-ido projectile magit smex ido-ubiquitous better-defaults))))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
@@ -305,3 +404,4 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  )
+

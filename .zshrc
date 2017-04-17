@@ -69,6 +69,12 @@ export GOPATH=$HOME/go
 # Add GOPATH's bin to to the general PATH
 export PATH=$PATH:$GOPATH/bin
 
+# Add Haskell Stack's global install bin
+export PATH=$HOME/.local/bin:$PATH
+
+# Add Fastlane for iOS and Android CI
+export PATH="$HOME/.fastlane/bin:$PATH"
+
 # Add mactex to the path on Macs
 # Set up path to use MacTeX properly
 if [[ `uname` == 'Darwin' ]]; then
@@ -81,3 +87,5 @@ if [ -n "$ANACONDA_ROOT" ]; then
     export PATH=$ANACONDA_ROOT:$PATH
 fi
 
+# At rbenv shim file to front of path when we have to use ruby
+export PATH="$HOME/.rbenv/shims:$PATH"

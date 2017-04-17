@@ -27,3 +27,4 @@ cp -r ~/.config/htop ./.config/
 cp -r ~/.zshrc ./
 cp -r ~/.tmux.conf ./
 cp -r ~/.emacs.d ./
+cp -r ~/.editorconfig ./
