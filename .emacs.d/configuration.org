@@ -1,0 +1,714 @@
+* Preamble and Bootstrapping
+** Introduction
+This is my attempt at keeping my emacs init somewhat sensible, and break the habbit of coming back to it a year later, being confused, and starting from scratch. A terrifying cycle, to be sure.
+** Bootstrap Package Manager and Require-Package
+*** Package Manager: straight.el
+I'm going to forsake package.el in favor of [[https://github.com/raxod502/straight.el][straight.el]]: the "next-generation, purely functional package manager for the Emacs hacker." I appriciate the functional nature, and package.el is always a battle I don't really like having to fight. (Still better than the pre-package.el days... wow).
+
+While writing, it is still in beta, but seems stable enough, I'll update this as it stabalizes (or dies the sad, slow open-source death).
+
+This package comes with a handy bootstrap:
+
+#+BEGIN_SRC emacs-lisp
+(let ((bootstrap-file (concat user-emacs-directory "straight/bootstrap.el"))
+      (bootstrap-version 2))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
+#+END_SRC
+*** Get use-package.el
+Use straight.el to get [[https://github.com/jwiegley/use-package][use-package]], a macro that makes setting up packages sane and not a verbose nightmare.
+#+BEGIN_SRC emacs-lisp
+(straight-use-package 'use-package)
+#+END_SRC
+**** Useful use-package Commands
++ *:ensure*
+  + Uses a package manager to download package if it can't be found
+  + ex. /:ensure t/ or, if the one named by use-package is different, /:ensure package-name/
++ *:init*
+  + Code to execute before package is loaded
++ *:config*
+  + Code to execute after package is loaded
++ *:bind*
+  + Binds key chord to emacs function. Also cretes an autoload for the function and defers loading until it is called.
+  + Takes either a cons or a list of cons-es
+  + ex. /:bind ("C-x C-o" . package-function-name)/
++ *:mode*
+  + Establish a defered binding within auto-mode-alist
+  + ex. /:mode "\\.rb\\'"/
++ *:interpreter*
+  + Like above but for interperter-mode-alist
+  + ex. /:interpreter "ruby"/
++ *:if*
+  + Load only if condition is met
+  + ex. /:if window-system/
+**** Support Packages
+use-package also needs some packages early on so it can use some its useful keywords, we'll just use straight to get them in here:
+#+BEGIN_SRC emacs-lisp
+(straight-use-package 'diminish)
+(straight-use-package 'delight)
+(straight-use-package 'bind-key)
+#+END_SRC
+* Sensible UI and UX Choices
+Emacs needs just a tiny bit of work to make its default settings to make things a bit more modern (Or slightly less modern, where the modernity is actually kind of annoying).
+
+** Tweak Aesthtics
+
+*** Sort out the GUI Settings
+To start, I don't want the tool bars or the scroll bar, they're just taking up space. And anyways, I masochistically try to force myself to use keys for everything.
+#+BEGIN_SRC emacs-lisp
+  (tool-bar-mode 0)
+  (menu-bar-mode 0)
+  (when window-system
+    (scroll-bar-mode -1))
+#+END_SRC
+
+I hate the lines that trail off to the right. Please just wrap them:
+#+BEGIN_SRC emacs-lisp
+  (use-package emacs
+    :delight (visual-line-mode " ↩")
+    :config (global-visual-line-mode t))
+#+END_SRC
+
+But also show me what line I'm on, otherwise it could get confusing. Also nice to track down errors.
+#+BEGIN_SRC emacs-lisp
+  (setq column-number-mode t)
+#+END_SRC
+
+*** Enable Pretty-Symbols /Eveywhere/
+Pretty symbol masking! I want my programs to look more and more like math. I admit this is sad, but, best of both worlds, emacs can make my stuff look like math and everyone else can just see regular old code. I also have it so that the fancy symbols will unprettify when you have the point on them, in the likely case I forget what that symbol means.
+#+BEGIN_SRC emacs-lisp
+  (global-prettify-symbols-mode t)
+  (setq prettify-symbols-unprettify-at-point 'right-edge)
+#+END_SRC
+
+*** Themes!
+
+Right now, I think [[https://draculatheme.com/][dracula-theme]] looks pretty cool. And they made it for a bunch of other things, so I can get a consistant theme going across apps.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package dracula-theme
+    :straight t
+    :config
+    (load-theme 'dracula t))
+#+END_SRC
+
+*** Fonts!
+
+Turns out, probably unsurprisingly, that fonts are difficult when you get to covering the terrible range of possible Unicode symbols. It's not a huge priority right now for me, but I may come back to look at this [[https://github.com/rolandwalker/unicode-fonts][package]] as inspiration, if I ever feel motivated/a deep need to do so.
+
+I'm going to go with a silghtly moddified version of Source Code Pro, [[https://github.com/nathco/Office-Code-Pro][Office Code Pro]], as my default font:
+
+#+BEGIN_SRC emacs-lisp
+  (add-to-list 'default-frame-alist
+               '(font . "Office Code Pro-12"))
+#+END_SRC
+
+*** Highlight Current Line
+Lightly highlight the line where the pointer is. It helps me quickly find where I am in the editor.
+
+#+BEGIN_SRC emacs-lisp
+  (when window-system
+    (global-hl-line-mode))
+#+END_SRC
+
+*** Better Startup and Dashboard
+
+The default start-up screen is nice when you're starting out, but I don't really need to see how to reach the tutorial every time I start emacs. Luckily, there's a convenient replacement [[https://github.com/rakanalh/emacs-dashboard][emacs-dashboard]].
+
+It's really configurable, see the docs in the link above.
+
+#+BEGIN_SRC emacs-lisp
+  (setq inhibit-startup-message t)
+
+  (use-package dashboard
+    :straight t
+    :config
+    (dashboard-setup-startup-hook))
+#+END_SRC
+
+** Better UX Defaults
+A lot of these come from the [[https://github.com/hrs/sensible-defaults.el/blob/master/sensible-defaults.el][sensible-defaults package]], which is a good refrence, if nothing else (I really probably could have just loaded the package, it's quite good).
+
+*** Default Directory
+The default should be $HOME
+
+#+BEGIN_SRC emacs-lisp
+  (setq default-directory "~/")
+#+END_SRC
+
+*** More Modern GC Threshold
+We have way more memory to burn through. This makes things like flx way more efficient. And still less intensive than atom.
+
+We'll set it to 20MB, which seems like the general recomendation.
+
+#+BEGIN_SRC emacs-lisp
+  (setq gc-cons-threshold 20000000)
+#+END_SRC
+
+*** Automatically Follow Symlinks
+No reason not to do this really, and I have quite a few floating around.
+
+#+BEGIN_SRC emacs-lisp
+  (setq vc-follow-symlinks t)
+#+END_SRC
+
+*** Single Space After Periods
+I've heard arguments for the double-space. I don't care.
+
+#+BEGIN_SRC emacs-lisp
+  (setq sentence-end-double-space nil)
+#+END_SRC
+
+*** Delete Selection Mode
+Highlighted text gets deleted/replaced like you're used to in most all other ediging software.
+
+#+BEGIN_SRC emacs-lisp
+  (delete-selection-mode t)
+#+END_SRC
+
+*** Ask y/n, not yes/no
+Who has time for all those extra characters?
+
+#+BEGIN_SRC emacs-lisp
+  (fset 'yes-or-no-p 'y-or-n-p)
+#+END_SRC
+
+*** Ask y/n on Exit
+I close emacs all the time when I don't mean to. I have no idea why. But this makes it a bit better.
+
+#+BEGIN_SRC emacs-lisp
+  (setq confirm-kill-emacs 'y-or-n-p)
+#+END_SRC
+
+*** Empty Scratch Buffer on Start-up
+
+#+BEGIN_SRC emacs-lisp
+  (setq initial-scratch-message nil)
+#+END_SRC
+
+*** Turn off the Error Bell
+It's real annoying...
+
+#+BEGIN_SRC emacs-lisp
+  (setq ring-bell-function 'ignore)
+#+END_SRC
+
+*** Better Text Size Key Bindings
+
+#+BEGIN_SRC emacs-lisp
+  (defun pvo/reset-text-size ()
+    (interactive)
+    (text-scale-set 0))
+
+  (define-key global-map (kbd "C-)") 'pvo/reset-text-size)
+  (define-key global-map (kbd "C-+") 'text-scale-increase)
+  (define-key global-map (kbd "C-=") 'text-scale-increase)
+  (define-key global-map (kbd "C-_") 'text-scale-decrease)
+  (define-key global-map (kbd "C--") 'text-scale-decrease)
+#+END_SRC
+
+*** Better Backup Settings
+I don't like emacs polluting every directory with a bunch of backups and weird states. Instead, put them into the system's temporary file directory. It's what it's there for.
+
+A warning, this is not a permenant storage location, so it's not super reliable. I save reflexivly and often, so I'm not really worried. Just be careful.
+
+#+BEGIN_SRC emacs-lisp
+  (setq backup-directory-alist
+        `((".*" . ,temporary-file-directory)))
+  (setq auto-save-file-name-transforms
+        `((".*" ,temporary-file-directory t)))
+#+END_SRC
+
+Prefer Backup by copying. Slower, but safer
+
+#+BEGIN_SRC emacs-lisp
+  (setq backup-by-copying t)
+#+END_SRC
+
+Delete old backups
+
+#+BEGIN_SRC emacs-lisp
+  (setq delete-old-versions t)
+#+END_SRC
+
+Version the backup's name
+
+#+BEGIN_SRC emacs-lisp
+  (setq version-control t)
+#+END_SRC
+
+* Projects and Searching
+
+** Projectile
+Manage projects with [[https://github.com/bbatsov/projectile][projectile]], which is super helpful.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package projectile
+    :straight t
+    :delight
+    :config
+    (projectile-global-mode))
+#+END_SRC
+
+** Ivy/Counsel/Swiper
+I'm using [[https://github.com/abo-abo/swiper][ivy]] as my completion frontend, extended to pretty much everything via counsel. This is a bit of a complex suite of packages (and side-packages for further integraton into other things) So some places to check for docs:
+
++ [[http://oremacs.com/swiper/][The Ivy User Manual]]
++ [[https://writequit.org/denver-emacs/presentations/2017-04-11-ivy.html][Ivy/Counsel/Swiper]] - A introduction guide
++ [[https://oremacs.com/][(or emacs]] - The creators blog
++ [[https://oremacs.com/2016/01/06/ivy-flx/][Blog entry on fuzzy matching]]
+
+#+BEGIN_SRC emacs-lisp
+  (use-package counsel
+    :straight t
+    :delight ivy-mode
+    :bind (
+           ("C-s" . swiper)
+           ("M-x" . counsel-M-x)
+           ("C-x C-f" . counsel-find-file)
+           ("C-c C-r". ivy-resume)
+           ("C-c k" . counsel-ag)
+           ("<f1> f" . counsel-describe-function)
+           ("<f1> v" . counsel-describe-variable)
+           ("<f1> l" . counsel-find-library)
+           ("<f2> i" . counsel-info-lookup-symbol)
+           ("<f2> u" . counsel-unicode-char))
+    :config
+    (ivy-mode 1)
+    (setq ivy-use-virtual-buffers t)
+    (setq enable-recursive-minibuffers t)
+    (setq ivy-count-format "(%d/%d) ")
+    (setq ivy-use-selectable-prompt t)
+    (setq ivy-re-builders-alist
+          '((t . ivy--regex-fuzzy)))
+    (setq ivy-initial-inputs-alist nil))
+#+END_SRC
+
+
+*** flx, better ordered fuzzy finding results
+[[https://github.com/lewang/flx][flx]] is a fuzzy search sorter. Seems to be the most popular choice in emacs, and I've set ivy to it's much more fuzzy match mode above, so this is really helpful in actually getting useful results near the top.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package flx
+    :straight t)
+#+END_SRC
+
+*** Counsel-Projectile Integration
+[[https://github.com/ericdanan/counsel-projectile][counsel-projectile]] provides some ivy integration with projectile, the main command being ~counsel-projectile~ called with ~C-c p SPC~
+
+#+BEGIN_SRC emacs-lisp
+  (use-package counsel-projectile
+    :straight t
+    :delight
+    :init
+    (setq counsel-projectile-mode t))
+#+END_SRC
+
+* Markup Languages and Text
+
+** Org Mode
+org-mode is a bit of a disaster. Firstly, it's huge and sprawling. Secondly, emacs actually comes packaged with a version of org... that's out of date. We can use use-package+straight.el to get around this, but it still takes some hacking...
+
+The init scripts are hacking in the proper version of org. They come from the straight.el package manager's [[https://github.com/raxod502/radian/blob/ee92ea6cb0473bf7d20c6d381753011312ef4a52/radian-emacs/radian-org.el#L46-L112][init file]]. Hopefully this can be cleared up sometime in the near future.
+
+#+BEGIN_SRC emacs-lisp
+    (use-package org-plus-contrib
+      :straight t
+      :bind ("C-c a" . org-agenda)
+      :mode (("\\.org$" . org-mode))
+      :init
+
+      (require 'org-tempo)
+
+      (define-obsolete-function-alias 'org-define-error 'define-error)
+
+      (defun pvo/org-git-version ()
+        "Return the abbreviated SHA for the Org Git repo."
+        (let ((default-directory (concat user-emacs-directory
+                                         "straight/repos/org/")))
+          (if (executable-find "git")
+              (with-temp-buffer
+                (call-process "git" nil '(t nil) nil
+                              "rev-parse" "--short" "HEAD")
+                (if (> (buffer-size) 0)
+                    (string-trim (buffer-string))
+                  "revision unknown"))
+            "git not available")))
+
+      (defalias #'org-git-version #'pvo/org-git-version)
+      (defun org-release () "N/A")
+
+      (provide 'org-version)
+      (with-eval-after-load 'org
+        (defalias #'org-git-version #'pvo/org-git-version))
+
+      :config
+      (setq org-insert-heading-respect-content t))
+
+  #+END_SRC
+
+*** Org Exporters
+We can export org files to /all/ sorts of cool formats. Why limit ourselves.
+
+**** Github Flavored Markdown!
+
+#+BEGIN_SRC emacs-lisp
+  (use-package ox-gfm
+    :straight t
+    :after(org))
+#+END_SRC
+
+** Markdown
+You can't escape writing markdown. Github-flavored-markdown is sorta the defacto standard at this point, so I'd like that as the default.
+
+#+begin_src emacs-lisp
+  (use-package markdown-mode
+    :straight t
+    :commands (markdown-mode gfm-mode)
+    :mode (("README\\.md\\'" . gfm-mode)
+           ("\\.md\\'" . gfm-mode)
+           ("\\.markdown\\'" . markdown-mode))
+    :init (setq markdown-command "multimarkdown"))
+#+end_src
+** YAML
+   #+begin_src emacs-lisp
+     (use-package yaml-mode
+       :straight t)
+   #+end_src
+
+* Programming Languages
+
+** Sensible Defaults for Programming
+
+*** Always Highlight Code
+I really don't ever want things not highlighted.
+
+#+BEGIN_SRC emacs-lisp
+  (global-font-lock-mode t)
+#+END_SRC
+
+*** Show And Clean Trailing Whitespace
+Highlight trailing whitespace while editing and delete on save.
+
+#+BEGIN_SRC emacs-lisp
+  (add-hook 'prog-mode-hook
+            (lambda () (setq show-trailing-whitespace t)))
+
+  (add-hook 'before-save-hook 'delete-trailing-whitespace)
+#+END_SRC
+
+*** Show Parens
+Highlight the current matched delimiters
+
+    #+begin_src emacs-lisp
+      (setq show-paren-delay 0)
+
+      (show-paren-mode 1)
+    #+end_src
+
+*** Ensure Files End with Newline
+
+#+BEGIN_SRC emacs-lisp
+  (setq require-final-newline t)
+#+END_SRC
+
+*** Fix Tabs (i.e. Use Spaces) and Tab-Widths
+Tabs are evil, and the emacs default of 8 spaces is... nonsense.
+
+First, never use Tabs by default. Always whitespace. If a filetype absolutly needs tabs, we can set it on that filetype later
+
+#+BEGIN_SRC emacs-lisp
+  (setq-default indent-tabs-mode nil)
+#+END_SRC
+
+Next, we want to sensibly use 4 spaces per tab as a general default. Emacs uses a list of tab widths, so we need to generate a new one and set it:
+
+#+BEGIN_SRC emacs-lisp
+  (setq tab-stop-list (number-sequence 4 120 4))
+#+END_SRC
+
+Finally, we may need to set tabs to different offsets, either on-the-fly, or as part of a language hook. This function can do that for use (found [[https://www.emacswiki.org/emacs/TabStopList][here]]):
+
+#+BEGIN_SRC emacs-lisp
+  (defun set-tab-stop-width (width)
+    "Set all tab stops to WIDTH in current buffer.
+
+     This updates `tab-stop-list', but not `tab-width'.
+
+     By default, `indent-for-tab-command' uses tabs to indent, see
+     `indent-tabs-mode'."
+    (interactive "nTab width: ")
+    (let* ((max-col (car (last tab-stop-list)))
+           ;; If width is not a factor of max-col,
+           ;; then max-col could be reduced with each call.
+           (n-tab-stops (/ max-col width)))
+      (set (make-local-variable 'tab-stop-list)
+           (mapcar (lambda (x) (* width x))
+                   (number-sequence 1 n-tab-stops)))
+      ;; So preserve max-col, by adding to end.
+      (unless (zerop (% max-col width))
+        (setcdr (last tab-stop-list)
+                (list max-col)))))
+
+  (defun two-space-indent ()
+    (set-tab-stop-width 2))
+#+END_SRC
+'
+*** Treat Camelcase as Seperate Words
+Conveient setting when naming variables.
+
+#+BEGIN_SRC emacs-lisp
+  (add-hook 'prog-mode-hook 'subword-mode)
+#+END_SRC
+
+*** Make Scripts Executable
+If a files starts with #!, make it executable on save.
+
+#+BEGIN_SRC emacs-lisp
+  (add-hook 'after-save-hook
+            'executable-make-buffer-file-executable-if-script-p)
+#+END_SRC
+
+** Flycheck
+On the fly syntax checking
+#+begin_src emacs-lisp
+  (use-package flycheck
+    :straight t
+    :init (global-flycheck-mode))
+#+end_src
+** Coq
+Is this actually a programming language? Oh well, I'm not making a new category.
+The main interface to Coq is Proof General, which is ... weird. And unnecessarily complicated.
+#+begin_src emacs-lisp
+  (load "~/.emacs.d/lisp/PG/generic/proof-site")
+#+end_src
+
+In addition to this we can extend proof general further with a Coq company mode:
+#+begin_src emacs-lisp
+  (use-package company-coq
+    :straight t
+    :init
+    (add-hook 'coq-mode-hook #'company-coq-mode))
+#+end_src
+
+** Haskell
+
+Haskell is so weird, but so great. Currently I'm using stack (though I'd like to try Nix sometime), at at the time of writing, I've found [[https://lexi-lambda.github.io/blog/2018/02/10/an-opinionated-guide-to-haskell-in-2018/][this guide to haskell development]] to be really helpful.
+
+*** Haskell Mode
+    #+begin_src emacs-lisp
+      (use-package haskell-mode
+        :straight t)
+    #+end_src
+
+*** Intero Mode
+Cool interactive Haskell stuff
+
+#+begin_src emacs-lisp
+  (use-package intero
+    :straight t
+    :hook (haskell-mode . intero-mode)
+    :config
+    (intero-global-mode 1))
+#+end_src
+
+** Lisps
+Can't escape Lisps, even if you wanted to (and I really don't). Clojure-family and Racket are my most commonly used, with some obvious emacs-lisp too/
+
+*** Clojure
+
+    #+begin_src emacs-lisp
+      (use-package clojure-mode
+        :straight t)
+    #+end_src
+
+**** Cider
+You can't use clojure-mode without cider. Probably the nicest REPL environment around.
+
+    #+begin_src emacs-lisp
+      (use-package cider
+        :straight t
+        :config
+        (add-hook 'clojure-mode-hook 'cider-mode)
+        (add-hook 'cider-mode-hook
+                  '(lambda () (local-set-key (kbd "RET") 'newline-and-indent))))
+    #+end_src
+
+*** Racket
+
+I'm trying out [[https://github.com/greghendershott/racket-mode][racket-mode]] here. I love racket, but don't really enjoy the Dr. Rakcet GUI, so hopefully this is a good compormise.
+
+I want tab to auto-complete in racket-mode, so I'll configure that here.
+
+    #+begin_src emacs-lisp
+            (use-package racket-mode
+              :straight t
+              :config
+              (setq tab-always-indent 'complete))
+    #+end_src
+
+*** All Lisps
+
+**** Agressive Indent
+Keep things indentend properly as I go. I'm curious trying this outside of Lisps only, but have not yet experemented with it. There are github issuse of this mode causing slowdowns, especially in larger files. Keep an eye out.
+
+#+begin_src emacs-lisp
+  (use-package aggressive-indent
+    :straight t
+    :hook ((clojure-mode
+            emacs-lisp-mode
+            common-lisp-mode
+            scheme-mode
+            lisp-mode
+            racket-mode) . aggressive-indent-mode))
+#+end_src
+
+**** Smartparens, always have matching delimeters
+
+    #+begin_src emacs-lisp
+      (use-package smartparens
+        :straight t
+        :init (require 'smartparens-config)
+        :hook (prog-mode . smartparens-mode)
+              ((clojure-mode
+                cider-repl-mode
+                emacs-lisp-mode
+                common-lisp-mode
+                scheme-mode
+                lisp-mode
+                racket-mode) . smartparens-strict-mode))
+    #+end_src
+
+**** Rainbow Delimiters
+
+     #+begin_src emacs-lisp
+       (use-package rainbow-delimiters
+         :straight t
+         :hook ((clojure-mode
+                 cider-repl-mode-hook
+                 emacs-lisp-mode
+                 common-lisp-mode
+                 scheme-mode
+                 lisp-mode
+                 racket-mode) . rainbow-delimiters-mode))
+     #+end_src
+
+**** Lispy
+
+     #+begin_src emacs-lisp
+       (use-package lispy
+         :straight t
+         :hook ((clojure-mode
+                 cider-repl-mode-hook
+                 emacs-lisp-mode
+                 common-lisp-mode
+                 scheme-mode
+                 lisp-mode
+                 racket-mode) . lispy-mode))
+     #+end_src
+** Rust
+Rust-lang has a mode. Lucky us. Like C, but so much more plesant. Nothing surprising here.
+   #+begin_src emacs-lisp
+     (use-package rust-mode
+       :straight t
+       :mode "\\.rs\\'")
+   #+end_src
+
+*** Racer
+Rust auto-completion. Requires you to install racer (a rust program, so you can use cargo)
+#+begin_src emacs-lisp
+  (use-package racer
+    :straight t
+    :hook
+    (rust-mode . racer-mode)
+    (racer-mode . eldoc-mode))
+#+end_src
+** Web Languages
+
+*** Coffee Script
+
+    #+begin_src emacs-lisp
+      (use-package coffee-mode
+        :straight t)
+    #+end_src
+
+*** Elm
+    #+begin_src emacs-lisp
+      (use-package elm-mode
+        :straight t
+        :config
+        (add-to-list 'company-backends 'company-elm))
+    #+end_src
+
+**** Elm Flycheck
+     #+begin_src emacs-lisp
+       (use-package flycheck-elm
+         :straight t
+         :hook
+         (flycheck-mode-hook . flycheck-elm-setup))
+     #+end_src
+
+*** JSON
+
+You can never escape JSON.
+
+#+begin_src emacs-lisp
+  (use-package json-mode
+    :straight t
+    :config
+    (add-hook 'json-mode-hook 'two-space-indent))
+#+end_src
+
+And a reformatter:
+
+#+begin_src emacs-lisp
+  (use-package json-reformat
+    :straight t
+    :after (json-mode)
+    :config
+    (setq json-reformat:indent-width 2))
+#+end_src
+
+And a handy little utility that lets us snatch out the path of a deeply nested JSON object:
+
+#+begin_src emacs-lisp
+  (use-package json-snatcher
+    :straight t
+    :after (json-mode))
+#+end_src
+
+*** PureScript
+**** PureScript Minor Mode
+     #+begin_src emacs-lisp
+       (use-package purescript-mode
+         :straight t)
+     #+end_src
+
+**** PureScript REPL Integration
+     #+begin_src emacs-lisp
+       (use-package psci
+         :straight t
+         :config
+         (add-hook 'purescript-mode-hook 'inferior-psci-mode))
+     #+end_src
+*** Web Mode
+Fancy catch-all HTML editing mode
+
+#+begin_src emacs-lisp
+  (use-package web-mode
+    :straight t
+    :mode
+    (("\\.phtml\\'" . web-mode)
+     ("\\.tpl\\.php\\'" . web-mode)
+     ("\\.[agj]sp\\'" . web-mode)
+     ("\\.as[cp]x\\'" . web-mode)
+     ("\\.erb\\'" . web-mode)
+     ("\\.mustache\\'" . web-mode)
+     ("\\.djhtml\\'" . web-mode)))
+#+end_src
