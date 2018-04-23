@@ -31,11 +31,16 @@ if [ -n "$ANTIGEN_LOCATION" ]; then
     #
 
     antigen bundle aws
+    antigen bundle docker
+    antigen bundle docker-compose
     antigen bundle git #https://github.com/robbyrussell/oh-my-zsh/wiki/Plugin:git
+    antigen bundle golang
     antigen bundle pip
     antigen bundle python
+    antigen bundle stack
     antigen bundle sudo
     antigen bundle tmux
+    antigen bundle tmuxinator
     antigen bundle vi-mode
     antigen bundle zsh-users/zsh-syntax-highlighting
 
@@ -59,7 +64,7 @@ fi
 
 if [[ `uname` == 'Darwin' ]]; then
     alias rstudio='open -a rstudio'
-    alias finder='open -a Finder .'
+    alias finder='open -a Finder'
 fi
 
 
@@ -68,6 +73,9 @@ export GOPATH=$HOME/go
 
 # Add GOPATH's bin to to the general PATH
 export PATH=$PATH:$GOPATH/bin
+
+# Add Cargo's home path for Rust
+export PATH=$HOME/.cargo/bin:$PATH
 
 # Add Haskell Stack's global install bin
 export PATH=$HOME/.local/bin:$PATH

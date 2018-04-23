@@ -23,8 +23,13 @@ cp -r ~/.config/htop ./.config/
 ###########################
 ## $HOME directory files ##
 ###########################
+if [ ! -d ".emacs.d" ]; then
+    mkdir .emacs.d
+fi
 
 cp -r ~/.zshrc ./
 cp -r ~/.tmux.conf ./
-cp -r ~/.emacs.d ./
+cp ~/.emacs.d/configuration.org ./.emacs.d/
+cp ~/.emacs.d/init.el ./.emacs.d/
+cp -r ~/.emacs.d/lisp ./.emacs.d/lisp
 cp -r ~/.editorconfig ./

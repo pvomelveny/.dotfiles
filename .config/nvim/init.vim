@@ -201,13 +201,16 @@ set directory=~/.vim-tmp
 "  Vim-Slime
 " --------------------
 let g:slime_target="tmux"
-let g:slime_default_config='{"socket_name": split($TMUX, ",")[0], "target_pane": ":.2"}'
+if !empty($TMUX)
+  let g:slime_default_config = {"socket_name": split($TMUX, ",")[0], "target_pane": ":.2"}
+endif
 let g:slime_python_ipython=1
 
 " -------------------
 "  EditorConfig
 " -------------------
 " Play nice with fugative
+let g:EditorConfig_core_mode='external_command'
 let g:EditorConfig_exclude_patterns = ['fugitive://.*']
 
 " --------------------
