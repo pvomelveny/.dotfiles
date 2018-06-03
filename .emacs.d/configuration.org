@@ -102,11 +102,11 @@ Right now, I think [[https://draculatheme.com/][dracula-theme]] looks pretty coo
 
 Turns out, probably unsurprisingly, that fonts are difficult when you get to covering the terrible range of possible Unicode symbols. It's not a huge priority right now for me, but I may come back to look at this [[https://github.com/rolandwalker/unicode-fonts][package]] as inspiration, if I ever feel motivated/a deep need to do so.
 
-I'm going to go with a silghtly moddified version of Source Code Pro, [[https://github.com/nathco/Office-Code-Pro][Office Code Pro]], as my default font:
+I have been using to go with a silghtly moddified version of Source Code Pro, [[https://github.com/nathco/Office-Code-Pro][Office Code Pro]], and it's really a solid choice. I'm currently testing out [[https://github.com/source-foundry/Hack][Hack]]:
 
 #+BEGIN_SRC emacs-lisp
   (add-to-list 'default-frame-alist
-               '(font . "Office Code Pro-12"))
+               '(font . "Hack-12"))
 #+END_SRC
 
 *** Highlight Current Line
@@ -484,7 +484,7 @@ On the fly syntax checking
 #+end_src
 ** Coq
 Is this actually a programming language? Oh well, I'm not making a new category.
-The main interface to Coq is Proof General, which is ... weird. And unnecessarily complicated.
+The main interface to Coq is Proof General, which is ... extra.
 #+begin_src emacs-lisp
   (load "~/.emacs.d/lisp/PG/generic/proof-site")
 #+end_src
