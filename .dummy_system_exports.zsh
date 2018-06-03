@@ -1,2 +1,2 @@
 #ANACONDA_ROOT="$HOME/anaconda3/bin"
-#ANTIGEN_LOCATION="$HOME/.antigen/antigen.zsh"
+#ZPLUG_HOME="$HOME/.antigen/antigen.zsh"
