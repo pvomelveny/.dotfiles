@@ -1,4 +1,5 @@
 * Preamble and Bootstrapping
+
 ** Introduction
 This is my attempt at keeping my emacs init somewhat sensible, and break the habbit of coming back to it a year later, being confused, and starting from scratch. A terrifying cycle, to be sure.
 ** Bootstrap Package Manager and Require-Package
@@ -364,6 +365,47 @@ We can export org files to /all/ sorts of cool formats. Why limit ourselves.
     :after(org))
 #+END_SRC
 
+** LaTeX
+Oh LaTeX. I'm trying to make my emacs my all powerful, go-to LaTeX editor (as opposed to using the web interface Overleaf). So I'm going to try and boost it a bit beyond the defaults. I think we can get most of the way using the [[http://www.gnu.org/software/auctex/][AUCTeX package]]. I'm currently using these pages as resources:
+  * [[https://piotrkazmierczak.com/2010/emacs-as-the-ultimate-latex-editor/][Emacs as the Ultimate LaTeX Editor]]
+  * [[https://jabranham.com/blog/2015/09/emacs-for-social-science/][Emacs with LaTeX for Academic Writing]]
+
+Important Note: As of 2018-08-17
+You must run some build commands in the cloned auctex repo manually (see [[https://github.com/raxod502/straight.el/issues/240][this issue]])
+`./autogen.sh && ./configure && make`
+Then (maybe?) tell straight.el to use those via:
+`M-x straight-normalize-package RET auctex RET`
+
+Hope that gets sorted... eventually?
+
+  #+begin_src emacs-lisp
+    (use-package reftex
+      :straight t
+      :commands turn-on-reftex
+      :config (setq reftex-plug-into-AUCTeX t))
+
+    (use-package latex
+      :straight auctex
+      :config
+      (setq TeX-auto-save t
+	    TeX-parse-self t
+	    TeX-show-compilation nil    ; if `t`, automatically shows compilation log
+	    LaTeX-electric-left-right-brace t
+	    ;; Set default views here. Right now only PDF using Okular
+	    TeX-view-program-selection '((output-pdf "Okular"))
+	    TeX-view-program-list '(("PDF Viewer" "okular")))
+      (setq-default TeX-master nil)
+      (add-hook 'LaTeX-mode-hook 'visual-line-mode)
+      (add-hook 'LaTeX-mode-hook 'flyspell-mode)
+      (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
+      (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
+      (add-hook 'LaTeX-mode-hook
+		(lambda () (set (make-variable-buffer-local 'TeX-electric-math)
+			   (cons "\\(" "\\)"))))
+      (add-hook 'plain-TeX-mode-hook
+		(lambda () (set (make-variable-buffer-local 'TeX-electric-math)
+			   (cons "$" "$")))))
+  #+end_src
 ** Markdown
 You can't escape writing markdown. Github-flavored-markdown is sorta the defacto standard at this point, so I'd like that as the default.
 
@@ -486,7 +528,9 @@ On the fly syntax checking
 Is this actually a programming language? Oh well, I'm not making a new category.
 The main interface to Coq is Proof General, which is ... extra.
 #+begin_src emacs-lisp
-  (load "~/.emacs.d/lisp/PG/generic/proof-site")
+  (if (file-exists-p "~/.emacs.d/lisp/PG/generic/proof-site.el")
+      (load "~/.emacs.d/lisp/PG/generic/proof-site")
+      nil)
 #+end_src
 
 In addition to this we can extend proof general further with a Coq company mode:
@@ -612,6 +656,56 @@ Keep things indentend properly as I go. I'm curious trying this outside of Lisps
                  lisp-mode
                  racket-mode) . lispy-mode))
      #+end_src
+** Prolog
+I am so so so so much more likely to write prolog than I am perl. I'm using SWI-Prolog currently, but the generic prolog-mode works well with it and others.
+#+begin_src emacs-lisp
+  (use-package prolog
+    :straight t
+    :mode ("\\.\\(pl\\|pro\\|lgt\\)" . prolog-mode)
+    ;; :init
+    ;; (add-to-list 'auto-mode-alist '("\\.\\(pl\\|pro\\|lgt\\)" . prolog-mode))
+    :config
+    (setq prolog-system 'swi
+          prolog-program-switches '((swi ("-G128M" "-T128M" "-L128M" "-O"))
+                                    (t nil))
+          prolog-electric-if-then-else-flag t)
+    (define-key prolog-mode-map (kbd "C-c l") 'pvo/prolog-insert-use-module)
+    (define-key prolog-mode-map (kbd "C-c q") 'pvo/prolog-insert-comment-block)
+    ;; :hook
+    ;; (lambda () (local-set-key "\C-cq" 'pvo/prolog-insert-comment-block))
+    ;; (lambda () (local-set-key "\C-cl" 'pvo/insert-use-module))
+    )
+#+end_src
+
+*** EDIProlog
+https://github.com/triska/ediprolog
+
+#+begin_src emacs-lisp
+  (use-package ediprolog
+    :straight t
+    :bind ([f10] . 'ediprolog-dwim))
+#+end_src
+
+*** Prolog Helper Functions
+https://www.metalevel.at/pceprolog/
+
+#+begin_src emacs-lisp
+  (defun pvo/prolog-insert-comment-block ()
+    "Insert a PceEmacs-style comment block like /* - - ... - - */ "
+    (interactive)
+    (let ((dashes "-"))
+      (dotimes (_ 36) (setq dashes (concat "- " dashes)))
+      (insert (format "/* %s\n\n%s */" dashes dashes))
+      (forward-line -1)
+      (indent-for-tab-command)))
+
+  (defun pvo/prolog-insert-use-module ()
+    "Intert load module command and put pointer in paren"
+    (interactive)
+    (insert ":- use_module(library()).")
+    (forward-char -3))
+#+end_src
+
 ** Rust
 Rust-lang has a mode. Lucky us. Like C, but so much more plesant. Nothing surprising here.
    #+begin_src emacs-lisp

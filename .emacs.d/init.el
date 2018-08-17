@@ -1,7 +1,7 @@
 ;; Emacs needs a bit of help finding the right org-mode
 (defvar new-org-dir "~/.emacs.d/straight/repos/org/lisp")
 (if (file-directory-p new-org-dir)
-  (add-to-list 'load-path new-org-dir)
+    (add-to-list 'load-path new-org-dir)
   nil)
 
 ;; Load our literate config file

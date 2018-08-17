@@ -5,14 +5,15 @@ export DEFAULT_USER='pvomelveny'
 export EDITOR='emacs'
 export ALTERNATE_EDITOR='vim'
 # Source Computer Local Variables
-if [ -f "$HOME/.system_exports.zsh" ]; then
-    source "$HOME/.system_exports.zsh"
+if [ -f "$HOME/.system_exports" ]; then
+    source "$HOME/.system_exports"
 fi
 
 ############
 ### Aliases
 ##
 alias ls='ls -G'
+alias chrome='google-chrome-stable &'
 
 if hash nvim 2>/dev/null; then
     alias vim='nvim'
@@ -53,9 +54,10 @@ if [ -n "$ZPLUG_HOME" ]; then
     zplug "plugins/sudo", from:oh-my-zsh
 
     ### OSX Plugins
-    zplug "plugins/brew", from:oh-my-zsh, if:"[[ `uname` == 'Darwin' ]]"
-    zplug "plugins/osx", from:oh-my-zsh, if:"[[ `uname` == 'Darwin' ]]"
-
+    if [[ `uname` == 'Darwin' ]]; then
+        zplug "plugins/brew", from:oh-my-zsh, if:"[[ `uname` == 'Darwin' ]]"
+        zplug "plugins/osx", from:oh-my-zsh, if:"[[ `uname` == 'Darwin' ]]"
+    fi
     ### Syntax Highlighting
     zplug "zdharma/fast-syntax-highlighting", from:github
 
