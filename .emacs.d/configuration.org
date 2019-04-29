@@ -526,11 +526,10 @@ On the fly syntax checking
 #+end_src
 ** Coq
 Is this actually a programming language? Oh well, I'm not making a new category.
-The main interface to Coq is Proof General, which is ... extra.
+The main interface to Coq is Proof General, which is is now on MELPA!
 #+begin_src emacs-lisp
-  (if (file-exists-p "~/.emacs.d/lisp/PG/generic/proof-site.el")
-      (load "~/.emacs.d/lisp/PG/generic/proof-site")
-      nil)
+  (use-package proof-general
+    :straight t)
 #+end_src
 
 In addition to this we can extend proof general further with a Coq company mode:
