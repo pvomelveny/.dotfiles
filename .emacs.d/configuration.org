@@ -107,7 +107,7 @@ I have been using to go with a silghtly moddified version of Source Code Pro, [[
 
 #+BEGIN_SRC emacs-lisp
   (add-to-list 'default-frame-alist
-               '(font . "Hack-12"))
+               '(font . "FiraCode Nerd Font Mono-12"))
 #+END_SRC
 
 *** Highlight Current Line
@@ -319,8 +319,9 @@ org-mode is a bit of a disaster. Firstly, it's huge and sprawling. Secondly, ema
 The init scripts are hacking in the proper version of org. They come from the straight.el package manager's [[https://github.com/raxod502/radian/blob/ee92ea6cb0473bf7d20c6d381753011312ef4a52/radian-emacs/radian-org.el#L46-L112][init file]]. Hopefully this can be cleared up sometime in the near future.
 
 #+BEGIN_SRC emacs-lisp
-    (use-package org-plus-contrib
+    (use-package org
       :straight t
+      :ensure org-plus-contrib
       :bind ("C-c a" . org-agenda)
       :mode (("\\.org$" . org-mode))
       :init
